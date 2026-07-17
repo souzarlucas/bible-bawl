@@ -1,0 +1,10 @@
+export type Role = 'admin' | 'apresentador' | 'auxiliar'
+export type User = { userId: string; name: string; role: Role }
+export type Category = { id: string; name: string; description: string; min_age: number; max_age: number; updated_at: string }
+export type Helper = { id: string; name: string; access_code?: string | null; updated_at: string }
+export type Team = { id: string; name: string; category_id: string; helper_id?: string | null; updated_at: string }
+export type Participant = { id: string; name: string; birth_date: string; team_id: string; status: 'titular' | 'substituto'; position: number; updated_at: string }
+export type Question = { id: number; status: string; is_current: number; updated_at: string }
+export type Answer = { id: string; question_id: number; participant_id: string; correct: number; device_id: string; updated_at: string }
+export type Snapshot = { categories: Category[]; helpers: Helper[]; teams: Team[]; participants: Participant[]; questions: Question[]; answers: Answer[]; version: number }
+export type QueuedOperation = { id: string; endpoint: string; body: Record<string, unknown>; createdAt: string; error?: string }

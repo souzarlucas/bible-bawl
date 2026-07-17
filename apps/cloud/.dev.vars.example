@@ -1,0 +1,3 @@
+# Use apenas no desenvolvimento local. O arquivo real .dev.vars não entra no GitHub.
+JWT_SECRET=troque-por-uma-chave-local
+INITIAL_ADMIN_PASSWORD=troque123

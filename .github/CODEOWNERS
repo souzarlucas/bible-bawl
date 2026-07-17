@@ -1,0 +1,5 @@
+# Proprietário geral do projeto.
+* @souzarlucas
+
+# Somente o proprietário pode aprovar mudanças nas proteções e automações.
+/.github/ @souzarlucas

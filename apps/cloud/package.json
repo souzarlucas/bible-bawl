@@ -1,0 +1,21 @@
+{
+  "name": "@bible-bawl/cloud",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "deploy:temporary": "wrangler deploy --temporary"
+  },
+  "dependencies": {
+    "hono": "^4.12.30",
+    "jose": "^6.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260717.1",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.111.0"
+  }
+}

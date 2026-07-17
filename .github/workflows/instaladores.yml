@@ -1,0 +1,105 @@
+name: Criar instaladores gratuitos
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  computador:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - plataforma: macos-latest
+            nome: macOS
+            argumentos: --target universal-apple-darwin --bundles dmg
+          - plataforma: windows-latest
+            nome: Windows
+            argumentos: --bundles nsis,msi
+          - plataforma: ubuntu-22.04
+            nome: Linux
+            argumentos: --bundles appimage,deb
+    runs-on: ${{ matrix.plataforma }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.plataforma == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - name: Preparar bibliotecas do Linux
+        if: matrix.plataforma == 'ubuntu-22.04'
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: Preparar o projeto
+        run: npm ci
+      - name: Criar instaladores
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+        with:
+          projectPath: apps/web
+          args: ${{ matrix.argumentos }}
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          releaseName: Bible Bawl ${{ github.ref_name }}
+          releaseBody: Instaladores gratuitos para computador. Veja as instruções no README.
+          releaseDraft: true
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Preparar o projeto
+        run: npm ci
+      - name: Atualizar o aplicativo Android
+        run: npm run preparar:android
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Preparar assinatura permanente do APK
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          CHAVE_ANDROID: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$CHAVE_ANDROID" ]; then
+            echo "Configure ANDROID_KEYSTORE_BASE64 antes de publicar uma versão."
+            exit 1
+          fi
+          printf '%s' "$CHAVE_ANDROID" | base64 --decode > "$RUNNER_TEMP/bible-bawl-release.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/bible-bawl-release.jks" >> "$GITHUB_ENV"
+      - name: Criar APK instalável
+        working-directory: apps/web/android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            ./gradlew assembleRelease
+          else
+            ./gradlew assembleDebug
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Bible-Bawl-Android-APK
+          path: apps/web/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+      - name: Anexar APK à versão pública
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: apps/web/android/app/build/outputs/apk/release/app-release.apk

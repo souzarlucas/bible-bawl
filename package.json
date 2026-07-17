@@ -1,0 +1,27 @@
+{
+  "name": "bible-bawl-novo",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n API,WEB -c yellow,cyan \"npm run dev -w @bible-bawl/api\" \"npm run dev -w @bible-bawl/web\"",
+    "build": "npm run build -w @bible-bawl/api && npm run build -w @bible-bawl/web && npm run build -w @bible-bawl/cloud",
+    "test": "npm run test -w @bible-bawl/api && npm run test -w @bible-bawl/web",
+    "diagnostico": "node scripts/diagnostico.mjs",
+    "iniciar": "npm run dev",
+    "desktop": "npm run desktop:dev -w @bible-bawl/web",
+    "instalador:desktop": "npm run desktop:build -w @bible-bawl/web",
+    "preparar:android": "npm run android:sync -w @bible-bawl/web",
+    "apk:android": "npm run android:apk -w @bible-bawl/web",
+    "publicar": "npm run build -w @bible-bawl/web && npm run deploy -w @bible-bawl/cloud",
+    "publicar:temporario": "npm run build -w @bible-bawl/web && npm run deploy:temporary -w @bible-bawl/cloud"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
