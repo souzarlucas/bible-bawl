@@ -22,6 +22,6 @@
     "publicar:temporario": "npm run build -w @bible-bawl/web && npm run deploy:temporary -w @bible-bawl/cloud"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^10.0.3"
   }
 }
