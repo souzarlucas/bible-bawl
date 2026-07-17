@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   computador:
+    environment: publicacao
     strategy:
       fail-fast: false
       matrix:
@@ -52,6 +53,7 @@ jobs:
           releaseDraft: true
 
   android:
+    environment: publicacao
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
