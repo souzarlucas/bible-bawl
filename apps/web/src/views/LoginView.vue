@@ -3,7 +3,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 
-const email = ref('admin@local'); const password = ref('troque123'); const error = ref(''); const loading = ref(false)
+const email = ref('admin@local'); const password = ref(''); const error = ref(''); const loading = ref(false)
+const localDevelopment = import.meta.env.DEV
 const store = useAppStore(); const router = useRouter()
 async function submit() {
   loading.value = true; error.value = ''
@@ -32,7 +33,8 @@ async function submit() {
         <p v-if="error" class="error">{{ error }}</p>
         <button class="primary wide" :disabled="loading">{{ loading ? 'Entrando…' : 'Entrar' }}</button>
       </form>
-      <p class="demo-note">Primeiro acesso local: <strong>admin@local</strong> / <strong>troque123</strong></p>
+      <p v-if="localDevelopment" class="demo-note">Ambiente local de desenvolvimento: <strong>admin@local</strong> / <strong>troque123</strong></p>
+      <p v-else class="demo-note">Use a conta individual fornecida pelo administrador principal.</p>
     </section>
   </main>
 </template>

@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from './stores/app'
 
 const store = useAppStore(); const route = useRoute(); const router = useRouter()
-const links = [
-  ['/', '⌂', 'Início'], ['/auxiliares', '♙', 'Auxiliares'], ['/equipes', '♟', 'Equipes'],
-  ['/copa', '✦', 'Responder'], ['/painel', '▣', 'Painel'], ['/resultados', '≡', 'Resultados']
-]
+const links = computed(() => {
+  const common=[['/', '⌂', 'Início'],['/copa', '✦', 'Responder'],['/resultados', '≡', 'Resultados']]
+  if (store.user?.role==='admin') return [common[0],['/auxiliares','♙','Auxiliares'],['/equipes','♟','Equipes'],common[1],['/painel','▣','Painel'],common[2],['/contas','⚿','Acessos']]
+  if (store.user?.role==='apresentador') return [common[0],common[1],['/painel','▣','Painel'],common[2]]
+  return common
+})
 onMounted(() => {
   store.initialize()
   window.addEventListener('online', () => store.setOnline(true))
@@ -25,7 +27,8 @@ function leave() { store.logout(); router.push('/login') }
         <span class="status-dot"></span>{{ store.online ? (store.syncing ? 'Sincronizando' : 'Online') : 'Offline' }}
         <strong v-if="store.pending">{{ store.pending }}</strong>
       </div>
-      <button class="user-button" @click="leave" :title="`Sair da conta de ${store.user?.name}`">{{ store.user?.name?.charAt(0) || 'U' }}</button>
+      <router-link class="user-button" to="/minha-conta" :title="`Minha conta: ${store.user?.name}`">{{ store.user?.name?.charAt(0) || 'U' }}</router-link>
+      <button class="logout-button" @click="leave">Sair</button>
     </header>
     <aside class="sidebar" aria-label="Menu principal">
       <router-link v-for="link in links" :key="link[0]" :to="link[0]" :title="link[2]"><span>{{ link[1] }}</span><em>{{ link[2] }}</em></router-link>

@@ -35,7 +35,7 @@ export async function verifyPassword(password: string, stored: string, pepper: s
   return difference === 0
 }
 
-export type Session = { userId: string; name: string; role: 'admin' | 'apresentador' | 'auxiliar' }
+export type Session = { userId: string; name: string; role: 'admin' | 'apresentador' | 'auxiliar'; isPrimary: boolean; authVersion: number }
 
 export async function createToken(session: Session, secret: string) {
   return new SignJWT(session).setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime('12h').sign(encoder.encode(secret))

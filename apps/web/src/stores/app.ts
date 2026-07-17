@@ -25,9 +25,17 @@ export const useAppStore = defineStore('app', () => {
       headers: { 'Content-Type': 'application/json', ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}), ...init.headers }
     })
     const body = await response.json().catch(() => ({}))
-    if (!response.ok) throw new Error(body.message || 'Não foi possível concluir a operação.')
+    if (!response.ok) {
+      if (response.status===401 || body.code==='ACCOUNT_BLOCKED' || body.code==='SESSION_REVOKED') {
+        logout()
+        if (window.location.pathname!=='/login') window.location.assign('/login')
+      }
+      throw new Error(body.message || 'Não foi possível concluir a operação.')
+    }
     return body
   }
+
+  async function request(path: string, init: RequestInit = {}) { return api(path,init) }
 
   async function login(email: string, password: string) {
     const result = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) })
@@ -105,5 +113,10 @@ export const useAppStore = defineStore('app', () => {
     if (value) synchronize().catch((error) => { message.value = error.message })
   }
 
-  return { token, user, data, online, syncing, pending, lastSync, message, currentQuestion, login, logout, initialize, save, synchronize, setOnline }
+  async function changePassword(currentPassword:string,newPassword:string) {
+    await api('/api/auth/change-password',{ method:'POST',body:JSON.stringify({ currentPassword,newPassword }) })
+    logout()
+  }
+
+  return { token, user, data, online, syncing, pending, lastSync, message, currentQuestion, login, logout, initialize, save, synchronize, setOnline, request, changePassword }
 })

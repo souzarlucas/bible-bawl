@@ -26,7 +26,7 @@ export default defineConfig({
         navigateFallback: 'index.html',
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         runtimeCaching: [{
-          urlPattern: /^https?:\/\/.*\/api\//,
+          urlPattern: ({ url, request }) => request.method === 'GET' && ['/api/health','/api/sync','/api/results'].includes(url.pathname),
           handler: 'NetworkFirst',
           options: { cacheName: 'bible-bawl-api', networkTimeoutSeconds: 4 }
         }]

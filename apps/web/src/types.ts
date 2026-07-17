@@ -1,5 +1,7 @@
 export type Role = 'admin' | 'apresentador' | 'auxiliar'
-export type User = { userId: string; name: string; role: Role }
+export type User = { userId: string; name: string; role: Role; isPrimary: boolean }
+export type ManagedUser = { id:string;name:string;email:string;role:Role;is_primary:number;active:number;last_login_at?:string|null;created_at:string;updated_at:string }
+export type AuditEntry = { id:string;actor_name:string;action:string;target_type:string;target_id?:string|null;details?:string|null;created_at:string }
 export type Category = { id: string; name: string; description: string; min_age: number; max_age: number; updated_at: string }
 export type Helper = { id: string; name: string; access_code?: string | null; updated_at: string }
 export type Team = { id: string; name: string; category_id: string; helper_id?: string | null; updated_at: string }

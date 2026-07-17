@@ -21,7 +21,9 @@ Para compartilhar os dados entre aparelhos, é necessário um endereço de sincr
 
 ## O que já funciona
 
-- login e perfis de acesso;
+- contas individuais com administrador principal protegido;
+- perfis de administrador, apresentador e auxiliar;
+- bloqueio de contas, redefinição de senha e histórico de atividades;
 - auxiliares, equipes e participantes;
 - 150 perguntas iniciais;
 - liberação e bloqueio de pergunta;
@@ -63,6 +65,17 @@ Conta local inicial de desenvolvimento:
 - senha: `troque123`
 
 Essa senha é somente para testes e deverá ser substituída antes do uso real.
+
+## Contas e permissões
+
+Na aplicação publicada, cada colaborador deve usar uma conta individual criada em **Acessos**. A senha do administrador principal não deve ser compartilhada.
+
+- **Administrador principal:** cria outros administradores e não pode ser bloqueado pela interface.
+- **Administrador:** configura auxiliares, equipes e participantes e gerencia contas que não sejam administrativas.
+- **Apresentador:** controla a pergunta liberada e acompanha resultados.
+- **Auxiliar:** registra respostas e acompanha resultados.
+
+Ao bloquear uma conta ou redefinir sua senha, as sessões anteriores deixam de funcionar. Alterações relevantes ficam registradas no histórico administrativo.
 
 ## Estrutura
 
