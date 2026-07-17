@@ -2,6 +2,12 @@
 
 Aplicativo livre e de código aberto para organizar equipes, participantes, perguntas, respostas e resultados de uma Copa Bíblica.
 
+## Acessar a aplicação online
+
+**[Abrir o Bible Bawl online](https://bible-bawl-app.icnovacidade.workers.dev)**
+
+O endereço acima abre a versão oficial hospedada na Cloudflare. Use sua conta individual para entrar; os instaladores para computador e Android utilizam a mesma sincronização.
+
 ## Onde funciona
 
 - macOS: aplicativo `.app` e imagem `.dmg`;
