@@ -14,7 +14,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "bible-bawl-db"
+      "database_name": "bible-bawl-db",
+      "database_id": "5584745c-053a-416c-8bff-e4a2956221bb"
     }
   ],
   "vars": {

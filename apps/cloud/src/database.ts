@@ -11,7 +11,7 @@ const schema = [
   `CREATE TABLE IF NOT EXISTS changes (version INTEGER PRIMARY KEY AUTOINCREMENT,entity TEXT NOT NULL,entity_id TEXT NOT NULL,operation TEXT NOT NULL,changed_at TEXT NOT NULL)`
 ]
 
-export async function ensureDatabase(db: D1Database, initialAdminPassword: string) {
+export async function ensureDatabase(db: D1Database, initialAdminPassword: string, passwordPepper: string) {
   await db.batch(schema.map((sql) => db.prepare(sql)))
   const now = new Date().toISOString()
   const categoryCount = await db.prepare('SELECT COUNT(*) AS total FROM categories').first<{ total: number }>()
@@ -31,7 +31,7 @@ export async function ensureDatabase(db: D1Database, initialAdminPassword: strin
   if (!userCount?.total) {
     if (!initialAdminPassword) throw new Error('INITIAL_ADMIN_PASSWORD não foi configurada.')
     await db.prepare('INSERT INTO users(id,name,email,password_hash,role,created_at,updated_at) VALUES(?,?,?,?,?,?,?)')
-      .bind(crypto.randomUUID(),'Administrador','admin@local',await hashPassword(initialAdminPassword),'admin',now,now).run()
+      .bind(crypto.randomUUID(),'Administrador','admin@local',await hashPassword(initialAdminPassword, passwordPepper),'admin',now,now).run()
   }
 }
 

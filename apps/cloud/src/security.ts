@@ -9,20 +9,26 @@ function base64(bytes: ArrayBuffer) {
   return btoa(binary)
 }
 
-async function derive(password: string, salt: string) {
-  const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits'])
-  return base64(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: encoder.encode(salt), iterations: 150_000 }, key, 256))
+async function derive(password: string, salt: string, pepper: string) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(pepper),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  return base64(await crypto.subtle.sign('HMAC', key, encoder.encode(`${salt}\0${password}`)))
 }
 
-export async function hashPassword(password: string) {
+export async function hashPassword(password: string, pepper: string) {
   const salt = crypto.randomUUID()
-  return `${salt}:${await derive(password, salt)}`
+  return `hmac-sha256-v1:${salt}:${await derive(password, salt, pepper)}`
 }
 
-export async function verifyPassword(password: string, stored: string) {
-  const [salt, expected] = stored.split(':')
-  if (!salt || !expected) return false
-  const actual = await derive(password, salt)
+export async function verifyPassword(password: string, stored: string, pepper: string) {
+  const [version, salt, expected] = stored.split(':')
+  if (version !== 'hmac-sha256-v1' || !salt || !expected) return false
+  const actual = await derive(password, salt, pepper)
   if (actual.length !== expected.length) return false
   let difference = 0
   for (let index = 0; index < actual.length; index += 1) difference |= actual.charCodeAt(index) ^ expected.charCodeAt(index)
