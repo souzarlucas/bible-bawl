@@ -27,7 +27,11 @@ app.use('/api/*', cors({
 
 app.use('/api/*', async (context, next) => {
   const localPassword = context.env.APP_ENV === 'preview' ? 'troque123' : ''
-  await ensureDatabase(context.env.DB, context.env.INITIAL_ADMIN_PASSWORD || localPassword)
+  await ensureDatabase(
+    context.env.DB,
+    context.env.INITIAL_ADMIN_PASSWORD || localPassword,
+    context.env.JWT_SECRET || defaultSecret
+  )
   await next()
 })
 
@@ -53,7 +57,9 @@ app.post('/api/auth/login', async (context) => {
   const input = await body(context)
   if (!input.email || !input.password) return context.json({ message: 'Informe e-mail e senha.' }, 400)
   const user = await context.env.DB.prepare('SELECT * FROM users WHERE lower(email)=lower(?)').bind(input.email).first<any>()
-  if (!user || !(await verifyPassword(input.password, user.password_hash))) return context.json({ message: 'E-mail ou senha incorretos.' }, 401)
+  if (!user || !(await verifyPassword(input.password, user.password_hash, context.env.JWT_SECRET || defaultSecret))) {
+    return context.json({ message: 'E-mail ou senha incorretos.' }, 401)
+  }
   const session: Session = { userId: user.id, name: user.name, role: user.role }
   return context.json({ token: await createToken(session, context.env.JWT_SECRET || defaultSecret), user: session })
 })

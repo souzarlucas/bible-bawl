@@ -25,5 +25,7 @@ jobs:
         run: npm test
       - name: Validar todas as aplicações
         run: npm run build
+      - name: Preparar bibliotecas do aplicativo Linux
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - name: Conferir aplicativo desktop
         run: cargo check --manifest-path apps/web/src-tauri/Cargo.toml
