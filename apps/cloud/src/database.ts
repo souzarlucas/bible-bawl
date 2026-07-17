@@ -2,6 +2,7 @@ import { hashPassword } from './security'
 
 const schema = [
   `CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY,name TEXT NOT NULL,email TEXT NOT NULL UNIQUE,password_hash TEXT NOT NULL,role TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS audit_log (id TEXT PRIMARY KEY,actor_user_id TEXT,actor_name TEXT NOT NULL,action TEXT NOT NULL,target_type TEXT NOT NULL,target_id TEXT,details TEXT,created_at TEXT NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY,name TEXT NOT NULL UNIQUE,description TEXT NOT NULL,min_age INTEGER NOT NULL,max_age INTEGER NOT NULL,updated_at TEXT NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS helpers (id TEXT PRIMARY KEY,name TEXT NOT NULL UNIQUE,access_code TEXT UNIQUE,updated_at TEXT NOT NULL,deleted_at TEXT)`,
   `CREATE TABLE IF NOT EXISTS teams (id TEXT PRIMARY KEY,name TEXT NOT NULL UNIQUE,category_id TEXT NOT NULL,helper_id TEXT,updated_at TEXT NOT NULL,deleted_at TEXT,FOREIGN KEY(category_id) REFERENCES categories(id),FOREIGN KEY(helper_id) REFERENCES helpers(id))`,
@@ -11,8 +12,18 @@ const schema = [
   `CREATE TABLE IF NOT EXISTS changes (version INTEGER PRIMARY KEY AUTOINCREMENT,entity TEXT NOT NULL,entity_id TEXT NOT NULL,operation TEXT NOT NULL,changed_at TEXT NOT NULL)`
 ]
 
+async function ensureUserColumns(db: D1Database) {
+  const columns = await db.prepare('PRAGMA table_info(users)').all<{ name: string }>()
+  const names = new Set(columns.results.map((column) => column.name))
+  if (!names.has('is_primary')) await db.prepare('ALTER TABLE users ADD COLUMN is_primary INTEGER NOT NULL DEFAULT 0').run()
+  if (!names.has('active')) await db.prepare('ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1').run()
+  if (!names.has('last_login_at')) await db.prepare('ALTER TABLE users ADD COLUMN last_login_at TEXT').run()
+  if (!names.has('auth_version')) await db.prepare('ALTER TABLE users ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 1').run()
+}
+
 export async function ensureDatabase(db: D1Database, initialAdminPassword: string, passwordPepper: string) {
   await db.batch(schema.map((sql) => db.prepare(sql)))
+  await ensureUserColumns(db)
   const now = new Date().toISOString()
   const categoryCount = await db.prepare('SELECT COUNT(*) AS total FROM categories').first<{ total: number }>()
   if (!categoryCount?.total) {
@@ -30,9 +41,36 @@ export async function ensureDatabase(db: D1Database, initialAdminPassword: strin
   const userCount = await db.prepare('SELECT COUNT(*) AS total FROM users').first<{ total: number }>()
   if (!userCount?.total) {
     if (!initialAdminPassword) throw new Error('INITIAL_ADMIN_PASSWORD não foi configurada.')
-    await db.prepare('INSERT INTO users(id,name,email,password_hash,role,created_at,updated_at) VALUES(?,?,?,?,?,?,?)')
-      .bind(crypto.randomUUID(),'Administrador','admin@local',await hashPassword(initialAdminPassword, passwordPepper),'admin',now,now).run()
+    await db.prepare('INSERT INTO users(id,name,email,password_hash,role,created_at,updated_at,is_primary,active) VALUES(?,?,?,?,?,?,?,?,?)')
+      .bind(crypto.randomUUID(),'Lucas Souza','admin@local',await hashPassword(initialAdminPassword, passwordPepper),'admin',now,now,1,1).run()
   }
+  await db.prepare(`UPDATE users SET is_primary=1,active=1
+    WHERE id=(SELECT id FROM users WHERE role='admin' ORDER BY CASE WHEN lower(email)='admin@local' THEN 0 ELSE 1 END,created_at LIMIT 1)
+      AND NOT EXISTS(SELECT 1 FROM users WHERE is_primary=1)`).run()
+}
+
+export async function recordAudit(
+  db: D1Database,
+  actor: { userId: string; name: string },
+  action: string,
+  targetType: string,
+  targetId?: string | number | null,
+  details?: Record<string, unknown>
+) {
+  await db.prepare('INSERT INTO audit_log(id,actor_user_id,actor_name,action,target_type,target_id,details,created_at) VALUES(?,?,?,?,?,?,?,?)')
+    .bind(crypto.randomUUID(),actor.userId,actor.name,action,targetType,targetId == null ? null : String(targetId),details ? JSON.stringify(details) : null,new Date().toISOString()).run()
+}
+
+export async function listUsers(db: D1Database) {
+  const result = await db.prepare(`SELECT id,name,email,role,is_primary,active,last_login_at,created_at,updated_at
+    FROM users ORDER BY is_primary DESC,active DESC,name COLLATE NOCASE`).all()
+  return result.results
+}
+
+export async function listAudit(db: D1Database, limit = 100) {
+  const result = await db.prepare(`SELECT id,actor_name,action,target_type,target_id,details,created_at
+    FROM audit_log ORDER BY created_at DESC LIMIT ?`).bind(Math.min(Math.max(limit,1),200)).all()
+  return result.results
 }
 
 export async function recordChange(db: D1Database, entity: string, id: string | number) {

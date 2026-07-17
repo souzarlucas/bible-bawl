@@ -1,0 +1,10 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAppStore } from '../stores/app'
+const store=useAppStore();const router=useRouter();const currentPassword=ref('');const newPassword=ref('');const confirmation=ref('');const error=ref('');const loading=ref(false)
+const roleLabels={ admin:'Administrador',apresentador:'Apresentador',auxiliar:'Auxiliar' }
+async function submit(){error.value='';if(newPassword.value!==confirmation.value){error.value='A confirmação da senha está diferente.';return}loading.value=true;try{await store.changePassword(currentPassword.value,newPassword.value);await router.push('/login')}catch(cause){error.value=cause instanceof Error?cause.message:'Não foi possível alterar a senha.'}finally{loading.value=false}}
+function leave(){store.logout();router.push('/login')}
+</script>
+<template><section><div class="page-heading"><div><p class="eyebrow">Segurança pessoal</p><h1>Minha conta</h1><p>Altere sua própria senha sem precisar do administrador.</p></div><button class="secondary" @click="leave">Sair desta conta</button></div><div class="profile-layout"><article class="panel profile-card"><span class="avatar profile-avatar">{{store.user?.name?.charAt(0)}}</span><h2>{{store.user?.name}}</h2><p>{{store.user ? roleLabels[store.user.role] : ''}}</p><span v-if="store.user?.isPrimary" class="primary-owner">Administrador principal</span></article><form class="panel form-stack" @submit.prevent="submit"><h2>Trocar minha senha</h2><p class="muted">Use pelo menos 10 caracteres e não compartilhe sua senha.</p><label>Senha atual<input v-model="currentPassword" type="password" required autocomplete="current-password"></label><label>Nova senha<input v-model="newPassword" type="password" minlength="10" required autocomplete="new-password"></label><label>Confirmar nova senha<input v-model="confirmation" type="password" minlength="10" required autocomplete="new-password"></label><p v-if="error" class="error">{{error}}</p><button class="primary wide" :disabled="loading">{{loading?'Salvando…':'Alterar senha'}}</button></form></div></section></template>
